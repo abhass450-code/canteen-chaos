@@ -92,11 +92,16 @@ function forMember(memberOrders, orders, menu, limit = 4) {
   const mine = orderCounts(memberOrders);
   const everyone = orderCounts(orders);
 
-  return menu
-    .filter((d) => d.orderable)
+  const available = menu.filter((dish) => dish.orderable);
+  const candidates = available.length > 0 ? available : menu;
+
+  return candidates
     .map((dish) => ({
       dish,
-      score: (mine.get(dish.id) || 0) * 5 + (everyone.get(dish.id) || 0) + dish.rating,
+      score:
+        (mine.get(dish.id) || 0) * 5 +
+        (everyone.get(dish.id) || 0) +
+        (dish.rating || 0),
     }))
     .sort((a, b) => b.score - a.score)
     .slice(0, limit)

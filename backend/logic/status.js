@@ -3,7 +3,7 @@
 // and the little kitchen simulation that moves orders along on its own.
 
 const FLOW = ['placed', 'accepted', 'preparing', 'ready', 'picked'];
-const TERMINAL = ['ready', 'picked', 'cancelled', 'refunded'];
+const TERMINAL = ['picked', 'cancelled', 'refunded'];
 
 // how long each stage should take before the kitchen moves it on (seconds)
 const AUTO_AFTER = { placed: 20, accepted: 25, preparing: 60 };

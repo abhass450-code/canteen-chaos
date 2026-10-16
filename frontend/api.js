@@ -38,6 +38,10 @@ const api = {
     const query = params.toString();
     return request('/menu' + (query ? `?${query}` : ''));
   },
+  getSuggestions(q) {
+    const params = new URLSearchParams({ q });
+    return request(`/menu/suggest?${params.toString()}`);
+  },
 
   getDish(id) {
     return request(`/menu/${id}`);

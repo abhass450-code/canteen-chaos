@@ -7,7 +7,7 @@
 
 const BASE = process.env.BASE || 'http://localhost:3000';
 const MEMBER = 'smoke-' + Math.random().toString(36).slice(2, 8);
-
+const IDEM = 'smoke-key-' + Math.random().toString(36).slice(2, 10);
 let pass = 0;
 let fail = 0;
 const failures = [];
@@ -221,7 +221,7 @@ const near = (a, b, tolerance = 0.02) => Math.abs(a - b) < tolerance;
 
     const placed = await call('/api/orders', {
       method: 'POST',
-      idem: 'smoke-key-1',
+      idem: IDEM,
       body: {
         items: [{ dishId: orderable.id, qty: 1 }],
         hostelRoom: 'b-204',
@@ -239,7 +239,7 @@ const near = (a, b, tolerance = 0.02) => Math.abs(a - b) < tolerance;
 
     const repeat = await call('/api/orders', {
       method: 'POST',
-      idem: 'smoke-key-1',
+      idem: IDEM,
       body: { items: [{ dishId: orderable.id, qty: 1 }] },
     });
     check('same idempotency key does not duplicate', repeat.json.token === placed.json.token);

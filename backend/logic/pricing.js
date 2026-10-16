@@ -87,9 +87,17 @@ function applyCoupon(code, lines, coupons, { slot = null, now = new Date() } = {
   const coupon = coupons.find((c) => c.code.toUpperCase() === wanted);
   if (!coupon) return { valid: false, discount: 0, reason: 'Coupon not found' };
 
-  if (coupon.usesLeft <= 0) {
-    return { valid: false, discount: 0, reason: 'This coupon is fully used' };
+  if (coupon.expiresAt) {
+  const expiry = new Date(coupon.expiresAt);
+
+  if (Number.isNaN(expiry.getTime()) || expiry <= now) {
+    return {
+      valid: false,
+      discount: 0,
+      reason: 'This coupon has expired',
+    };
   }
+}
 
   const subtotal = sumLines(lines);
   if (subtotal < coupon.minOrder) {

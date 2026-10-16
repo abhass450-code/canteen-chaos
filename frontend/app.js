@@ -303,15 +303,128 @@ modalBackdrop.addEventListener('click', closeModal);
 /* ---------------------------------------------------------- filters */
 
 const searchInput = document.getElementById('searchInput');
-let searchTimer = null;
+const suggestBox = document.getElementById('suggestBox');
 
-searchInput.addEventListener('input', (e) => {
+let searchTimer = null;
+let suggestTimer = null;
+let activeSuggestion = -1;
+
+function closeSuggestions() {
+  suggestBox.replaceChildren();
+  suggestBox.hidden = true;
+  searchInput.setAttribute('aria-expanded', 'false');
+  searchInput.removeAttribute('aria-activedescendant');
+  activeSuggestion = -1;
+}
+
+function chooseSuggestion(dish) {
+  searchInput.value = dish.name;
+  state.filters.q = dish.name;
+  closeSuggestions();
+  loadMenu();
+}
+
+function showSuggestions(items) {
+  suggestBox.replaceChildren();
+  activeSuggestion = -1;
+
+  if (!items.length) {
+    closeSuggestions();
+    return;
+  }
+
+  items.forEach((dish, index) => {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'suggest-item';
+    option.id = `suggestion-${index}`;
+    option.setAttribute('role', 'option');
+    option.setAttribute('aria-selected', 'false');
+
+    const name = document.createElement('span');
+    name.textContent = dish.name;
+
+    const category = document.createElement('span');
+    category.className = 'suggest-cat';
+    category.textContent = `${dish.category} · Rs. ${dish.price}`;
+
+    option.append(name, category);
+    option.addEventListener('click', () => chooseSuggestion(dish));
+    suggestBox.appendChild(option);
+  });
+
+  suggestBox.hidden = false;
+  searchInput.setAttribute('aria-expanded', 'true');
+}
+
+searchInput.addEventListener('input', (event) => {
+  const value = event.target.value;
+  const query = value.trim();
+
   clearTimeout(searchTimer);
-  const value = e.target.value;
+  clearTimeout(suggestTimer);
+
   searchTimer = setTimeout(() => {
     state.filters.q = value;
     loadMenu();
   }, 300);
+
+  if (!query) {
+    closeSuggestions();
+    return;
+  }
+
+  suggestTimer = setTimeout(async () => {
+    try {
+      const data = await api.getSuggestions(query);
+
+      // Ignore results for an older query.
+      if (searchInput.value.trim() !== query) return;
+
+      showSuggestions(data.suggestions || []);
+    } catch (error) {
+      if (searchInput.value.trim() === query) closeSuggestions();
+    }
+  }, 120);
+});
+
+searchInput.addEventListener('keydown', (event) => {
+  const options = [...suggestBox.querySelectorAll('.suggest-item')];
+
+  if (event.key === 'Escape') {
+    closeSuggestions();
+    return;
+  }
+
+  if (!options.length) return;
+
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    activeSuggestion =
+      (activeSuggestion + direction + options.length) % options.length;
+
+    options.forEach((option, index) => {
+      const active = index === activeSuggestion;
+      option.classList.toggle('active', active);
+      option.setAttribute('aria-selected', String(active));
+    });
+
+    searchInput.setAttribute(
+      'aria-activedescendant',
+      options[activeSuggestion].id
+    );
+  }
+
+  if (event.key === 'Enter' && activeSuggestion >= 0) {
+    event.preventDefault();
+    options[activeSuggestion].click();
+  }
+});
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.search-wrap')) closeSuggestions();
 });
 
 document.querySelectorAll('.chip').forEach((chip) => {
